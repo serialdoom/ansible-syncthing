@@ -1,0 +1,27 @@
+whitespace:
+  image: mhristof/silver_searcher
+  script:
+    - bash -c '!ag --vimgrep " {1,}$"'
+    - bash -c '!ag --ignore Makefile --ignore=*sql --vimgrep "	"'
+
+flake8:
+  image: mhristof/flake8
+  script:
+    - flake8 .
+
+shellcheck:
+  image: mhristof/shellcheck
+  script:
+    - for f in $(find ./ -name "*.sh"); do shellcheck $f || EXIT_CODE=1; done
+    - exit ${EXIT_CODE}
+
+database_test:
+  image: mysql
+  services:
+    - mysql:5.5.49
+  variables:
+    MYSQL_ROOT_PASSWORD: ass
+  script:
+    - DB=$( find ./ -name '*sql')
+    - for db in $DB; do echo $db; mysql --host mysql -uroot -pass -e "create database \`$(basename $db .sql)\`"; done
+    - for db in $DB; do echo $db; mysql --host mysql -uroot -pass $(basename $db .sql) < $db; done

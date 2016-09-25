@@ -1,0 +1,8 @@
+*.retry
+.vagrant*
+*.sw[op]
+*.pyc
+*.log
+*.zip
+local_cache*
+
