@@ -1,0 +1,7 @@
+---
+syncthing_shared_fodler: '/mnt/data1/shared'
+api_token: '{{ ansible_local.syncthing.config.gui.apiKey }}'
+deviceID: '{{ ansible_local.syncthing.status.myID }}'
+
+
+syncthing_others_ip: '{{ hostvars[item].facter_ipaddress_eth1 }}'

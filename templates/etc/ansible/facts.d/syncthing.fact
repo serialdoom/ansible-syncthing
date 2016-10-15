@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+#vi: ft=sh
+
+token=$(grep apikey /var/lib/syncthing/.config/syncthing/config.xml 2>/dev/null | cut -d '<'  -f2 | cut -d '>' -f2)
+config=$(curl -X GET -H "X-API-Key: $token" -s http://localhost:8384/rest/system/config)
+status=$(curl -X GET -H "X-API-Key: $token" -s http://localhost:8384/rest/system/status)
+
+if [[ $config =~ "CSRF Error" ]]; then
+    output='{"error": "CSRF Error"}'
+else
+    output="{\"config\": $config, \"status\": $status }"
+fi
+
+cat << EOF
+$output
+EOF

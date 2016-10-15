@@ -1,0 +1,58 @@
+---
+  - name: check for config file
+    stat:
+      path: /var/lib/syncthing/.config/syncthing/config.xml
+    register: config_xml
+
+  - name: start the service once to create the config files
+    service:
+      name: syncthing
+      state: started
+    when: not config_xml.stat.exists
+
+  - name: wait for the config file to appear
+    wait_for:
+      path: /var/lib/syncthing/.config/syncthing/config.xml
+
+
+  - name: deploy the custom facts script
+    template:
+      src: etc/ansible/facts.d/syncthing.fact
+      dest: /etc/ansible/facts.d/syncthing.fact
+      mode: 0755
+    register: facts_d
+    tags:
+      - facts
+
+  - name: reload ansible_local
+    when: facts_d|changed
+    setup:
+      filter: ansible_local
+    tags:
+      - facts
+
+  - debug: var=ansible_local.syncthing.status.myID
+    tags:
+      - facts
+
+  - name: get this nodes configuration
+    uri:
+      url: http://localhost:8384/rest/system/config
+      method: GET
+      HEADER_X-API-Key: '{{ api_token }}'
+    register: config
+    tags:
+      - json
+
+  - name: deploy config.json template in the server
+    template:
+      src: config.json
+      dest: /var/lib/syncthing/config.json
+      validate: 'jq . %s'
+    tags:
+      - json
+
+  - name: deploy new config
+    shell: 'curl -X POST -H "X-API-Key: {{api_token }}" http://localhost:8384/rest/system/config -d @/var/lib/syncthing/config.json'
+    tags:
+      - setup-syncs

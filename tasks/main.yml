@@ -1,2 +1,53 @@
 ---
+  - name: apt-get stuff
+    apt:
+      name: '{{ item }}'
+      state: present
+      cache_valid_time: 36000
+      update_cache: yes
+    with_items:
+      - jq
+    tags:
+      - apt
 
+  - name: wget package
+    get_url:
+      url: https://github.com/syncthing/syncthing/releases/download/v0.14.7/syncthing-linux-amd64-v0.14.7.tar.gz
+      dest: /usr/local/src/syncthing-linux-amd64-v0.14.7.tar.gz
+
+  - name: extract syncthing
+    unarchive:
+      src: /usr/local/src/syncthing-linux-amd64-v0.14.7.tar.gz
+      dest: /usr/local/src/
+      copy: false
+
+  - name: update alternatives
+    alternatives:
+      name: syncthing
+      path: /usr/local/src/syncthing-linux-amd64-v0.14.7/syncthing
+      link: /usr/local/bin/syncthing
+
+  - name: add user
+    user:
+      name: syncthing
+      home: /var/lib/syncthing
+      system: true
+
+  - name: deploy init file
+    template:
+      src: etc/init/syncthing.conf
+      dest: /etc/init/syncthing.conf
+
+  - name: create shared folder directories
+    file:
+      path: '{{ item }}'
+      state: directory
+      owner: syncthing
+      group: syncthing
+      mode: 0755
+    with_items:
+      - '{{ syncthing_shared_fodler }}'
+      - /etc/ansible/facts.d/
+
+  - name: initial setup
+    include: initialize.yml

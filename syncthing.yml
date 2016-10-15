@@ -1,4 +1,7 @@
 ---
+  - hosts: syncthing
+    gather_facts: true
+
   - hosts: all
     roles:
       - syncthing
